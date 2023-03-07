@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
-
-base = [5, 2, 3, 4, -2, -1, 0, -3, 1]
-actor = [2, 3, 1, -2, 5, -1, 2]
+base = [3, 2, 1, 3, -3, 1]
+actor = [1]
 
 # Define the function to compute the roots
 def compute_roots(c):
@@ -11,10 +11,15 @@ def compute_roots(c):
     # p = np.poly1d(base) * np.poly1d(actor) * c
     p = np.poly1d(base) + c * np.poly1d(actor)
     roots = p.roots
-    # Sort the roots by their real part
-    roots = sorted(roots, key=lambda x: x.real)
-    # Return the real and imaginary parts of the roots as a tuple
+    # calculate derivative of roots of p with respect to c
+    # base(x) + c * actor(x) = 0
+    # base'(x) + c' * actor'(x) = 0
+
+    # sort the roots by their real part
+    
+    roots = sorted(roots, key=lambda r: r.real)
     return [(r.real, r.imag) for r in roots]
+
 
 
 def poly(p, var_string="x"):
@@ -42,35 +47,42 @@ def poly(p, var_string="x"):
     return res
 
 
-# Define the range of c values to compute roots for
-c_vals = np.linspace(-100, 100, 40000)
+if __name__ == "__main__":
+    # Define the range of c values to compute roots for
+    c_vals = np.linspace(-20, 20, 3200)
 
-# Compute the roots for each value of c
-results = []
-for c in c_vals:
-    results.append(compute_roots(c))
+    # Compute the roots for each value of c
+    # results = []
+    # for c in c_vals:
+    #     roots = compute_roots(c)
+    #     results.append(roots)
 
-# Transpose the results array so that we can plot each root separately
-results = np.transpose(results, (1, 0, 2))
+    # Use multiprocessing to compute the roots for each value of c
+    with Pool() as pool:
+        results = pool.map(compute_roots, c_vals)
+        
 
-# Create a 3D plot of the roots as a function of c
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(111, projection="3d")
-for i in range(len(results)):
-    ax.plot(
-        c_vals,
-        [results[i][j][0] for j in range(len(results[i]))],
-        [results[i][j][1] for j in range(len(results[i]))],
-        alpha=0.7,
-        linewidth=2,
-    )
-ax.set_xlim(-10, 10)
-ax.set_ylim(-6, 6)
-ax.set_zlim(-6, 6)
-ax.set_xlabel("Actor Strength (c)")
-ax.set_ylabel("Real part of roots")
-ax.set_zlabel("Imaginary part of roots")
-# title the graph based on the actor and base polynomial, converting the array to a polynomial
-ax.set_title(f"Root Bus of Base ({poly(base)}) and Actor ({poly(actor)})")
+    # Transpose the results array so that we can plot each root separately
+    results = np.transpose(results, (1, 0, 2))
 
-plt.show()
+    # Create a 3D plot of the roots as a function of c
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="3d")
+    for i in range(len(results)):
+        ax.plot(
+            c_vals,
+            [results[i][j][0] for j in range(len(results[i]))],
+            [results[i][j][1] for j in range(len(results[i]))],
+            alpha=0.7,
+            linewidth=2,
+        )
+    ax.set_xlim(-20, 20)
+    ax.set_ylim(-6, 6)
+    ax.set_zlim(-6, 6)
+    ax.set_xlabel("Actor Strength (c)")
+    ax.set_ylabel("Real part of roots")
+    ax.set_zlabel("Imaginary part of roots")
+    # title the graph based on the actor and base polynomial, converting the array to a polynomial
+    ax.set_title(f"Root Bus of Base ({poly(base)}) and Actor ({poly(actor)})")
+
+    plt.show()
